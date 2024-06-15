@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link
+			rel="shortcut icon"
+			href="/assets/favicon.png"
+			type="image/x-icon"
+		/>
+		<title>Upload Files</title>
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+			.navbar {
+				width: 750px;
+				margin: auto;
+				padding: 50px;
+				display: flex;
+				justify-content: space-between;
+				font-size: 32px;
+				font-weight: 500;
+				letter-spacing: 1px;
+			}
+			.nav-link {
+				text-decoration: none;
+				color: black;
+			}
+			.active {
+				text-decoration: underline;
+			}
+			body {
+				background-color: #eee;
+			}
+			.li-items {
+				display: flex;
+				justify-content: space-between;
+				align-items: center;
+				margin: 5px 0;
+				font-size: 16px;
+			}
+			.del-btn {
+				padding: 15px 12px;
+				color: black;
+				font-size: 16px;
+			}
+			.del-btn:hover {
+				cursor: pointer;
+			}
+			.upload-container {
+				display: flex;
+				flex-direction: column;
+				justify-content: center;
+				align-items: center;
+				padding: 10% 0;
+			}
+			.upload-header {
+				font-size: 42px;
+				letter-spacing: 1px;
+			}
+			.form {
+				margin-top: 150px;
+			}
+			.upload-btn {
+				padding: 15px 20px;
+				border: 1px solid black;
+				box-shadow: 0px 0px 5px black;
+				outline: none;
+				font-size: 22px;
+				font-weight: 600;
+				letter-spacing: 0.5px;
+			}
+			.upload-btn:hover {
+				cursor: pointer;
+				box-shadow: 0px 0px 3px black;
+				background-color: #dddddd;
+			}
+			.spinner {
+				border: 4px solid rgba(0, 0, 0, 0.1);
+				border-top: 4px solid #333;
+				border-radius: 50%;
+				width: 30px;
+				height: 30px;
+				animation: spin 1s linear infinite;
+			}
+
+			@keyframes spin {
+				0% {
+					transform: rotate(0deg);
+				}
+				100% {
+					transform: rotate(360deg);
+				}
+			}
+		</style>
+	</head>
+	<nav class="navbar">
+		<a id="home-nav" href="/" class="nav-link">Home</a>
+		<a id="upload-nav" href="/upload" class="nav-link">Upload</a>
+		<a id="post-nav" href="/post" class="nav-link">Post CGI</a>
+	</nav>
+	<body>
+		<div class="upload-container">
+			<h1 class="upload-header">Upload Files</h1>
+			<ul id="upload-section" class="uploaded-files"></ul>
+			<form
+				id="uploadForm"
+				method="post"
+				action="/upload"
+				class="form"
+				enctype="multipart/form-data"
+				
+			>
+				<input
+					type="file"
+					name="upload-file"
+					id="upload-file"
+					required
+				/>
+				<button type="submit" class="upload-btn">Upload</button>
+				<div id="loadingIndicator" style="display: none">
+					<!-- Add your loading indicator here, e.g., a spinner -->
+					<div class="spinner"></div>
+				</div>
+			</form>
+		</div>
+	</body>
+	<script>
+		const url = window.location.pathname;
+		const homeNav = document.getElementById("home-nav");
+		const uploadNav = document.getElementById("upload-nav");
+
+		if (url === "\\") {
+			uploadNav.classList.remove("active");
+			homeNav.classList.add("active");
+		} else {
+			homeNav.classList.remove("active");
+			uploadNav.classList.add("active");
+		}
+
+		fetch("/script/list.php")
+			.then((response) => response.json()) // Parse the JSON response
+			.then((fileList) => {
+				const uploadList = document.getElementById("upload-section");
+				uploadList.style.width = "250px";
+				uploadList.style.margin = "25px 0";
+
+				fileList.forEach((file) => {
+					const li = document.createElement("li");
+					li.classList.add("li-items");
+					li.textContent = file;
+					const delBtn = document.createElement("button");
+					delBtn.textContent = "Delete file";
+					delBtn.classList.add("del-btn");
+					delBtn.addEventListener("click", () => {
+						console.log(file);
+						fetch(`/upload`, { method: "DELETE", body: file }).then(
+							(res) => {
+								if (res.ok)
+									alert(`File ${file} successfully deleted!`);
+								else alert(`Failed to delete file :(\nError status returned: ${res.status}`);
+							}
+						);
+					});
+					li.appendChild(delBtn); // Append delete button to list item
+					uploadList.appendChild(li); // Append list item to list container
+				});
+			})
+			.catch((error) => console.error("Error fetching data:", error));
+	</script>
+</html>

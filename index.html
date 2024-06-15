@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link
+			rel="shortcut icon"
+			href="/assets/favicon.png"
+			type="image/x-icon"
+		/>
+		<style>
+			* {
+				margin: 0;
+				padding: 0;
+				box-sizing: border-box;
+			}
+			.navbar {
+				width: 750px;
+				margin: auto;
+				padding: 50px;
+				display: flex;
+				justify-content: space-between;
+				font-size: 32px;
+				font-weight: 500;
+				letter-spacing: 1px;
+			}
+			.nav-link {
+				text-decoration: none;
+				color: black;
+			}
+			.active {
+				text-decoration: underline;
+			}
+			body {
+				background-color: #eee;
+			}
+			.main-page-container {
+				display: flex;
+				flex-direction: column;
+				justify-content: center;
+				align-items: center;
+				padding: 10% 0;
+			}
+			.project-welcome {
+				font-size: 58px;
+				letter-spacing: 1px;
+			}
+			.project-desc {
+				margin-top: 75px;
+				font-size: 22px;
+				letter-spacing: 0.5px;
+			}
+			.upload-link {
+				margin-top: 75px;
+				font-size: 24px;
+				/* text-decoration: none; */
+				color: black;
+			}
+			.upload-link:hover {
+				font-size: 26px;
+				border: 1px solid black;
+				transition: 0.5s;
+				padding: 15px 20px;
+			}
+		</style>
+
+		<title>Welcome</title>
+	</head>
+	<nav class="navbar">
+		<a id="home-nav" href="/" class="nav-link">Home</a>
+		<a id="upload-nav" href="/upload" class="nav-link">Upload</a>
+		<a id="post-nav" href="/post" class="nav-link">Post CGI</a>
+	</nav>
+	<body>
+		<div class="main-page-container">
+			<h1 class="project-welcome">Welcome to Webserv</h1>
+			<p class="project-desc">
+				This is a simple project to create a web server that can handle
+				GET, POST, DELETE requests.
+			</p>
+			<a class="upload-link" href="/upload">Click here to upload files</a>
+		</div>
+
+		<script>
+			const url = window.location.pathname;
+			const homeNav = document.getElementById("home-nav");
+			const uploadNav = document.getElementById("upload-nav");
+			const postNav = document.getElementById("post-nav");
+
+			if (url === "/") {
+				uploadNav.classList.remove("active");
+				postNav.classList.remove("active");
+				homeNav.classList.add("active");
+			} else if (url === "/upload") {
+				homeNav.classList.remove("active");
+				postNav.classList.remove("active");
+				uploadNav.classList.add("active");
+			} else {
+				homeNav.classList.remove("active");
+				uploadNav.classList.remove("active");
+				postNav.classList.add("active");
+			}
+		</script>
+	</body>
+</html>

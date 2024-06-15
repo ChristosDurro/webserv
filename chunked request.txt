@@ -1,0 +1,3 @@
+curl -X POST http://localhost:8001/script/post.php \
+     -H "Content-Type: text/plain" \
+     --data-binary "hello from cdurro"
