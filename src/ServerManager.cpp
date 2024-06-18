@@ -6,7 +6,7 @@
 /*   By: cdurro <cdurro@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/10 12:46:33 by cdurro            #+#    #+#             */
-/*   Updated: 2024/06/15 12:09:47 by cdurro           ###   ########.fr       */
+/*   Updated: 2024/06/18 11:43:13 by cdurro           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,24 +16,30 @@ ServerManager::ServerManager(Config const &config) : _maxFD(0), _config(config)
 {
 	// Initialize servers and sockets
 	std::vector<ServerConfig> servers = _config.getServers();
+	std::set<std::pair<std::string, int> > hostPortPairs;
 	isON = false;
 	for (std::vector<ServerConfig>::iterator it = servers.begin(); it != servers.end(); ++it)
 	{
 		if (it->getHost().empty())
-		{
 			return;
-		}
 
 		std::set<int> ports = it->getPorts();
 		for (std::set<int>::iterator portIT = ports.begin(); portIT != ports.end(); ++portIT)
 		{
+			std::pair<std::string, int> hostPortPair = std::make_pair(it->getHost(), *portIT);
+
+			if (hostPortPairs.find(hostPortPair) != hostPortPairs.end())
+				continue;
+
+			hostPortPairs.insert(std::make_pair(it->getHost(), *portIT));
+
 			ServerSocket *serverSocket = new ServerSocket(static_cast<int>(*portIT), it->getIP(), *it);
+
 			_serverSockets.push_back(serverSocket);
 			if (serverSocket->getFD() > _maxFD)
-			{
 				_maxFD = serverSocket->getFD();
-			}
 		}
+
 	}
 }
 
@@ -88,19 +94,12 @@ void ServerManager::run()
 			FD_ZERO(&writeFDs);
 			throw std::runtime_error("select() failed");
 		}
-		// else if (numReady == 0)
-		// {
-		// 	std::cout << "Server inactive for timeout period" << std::endl;
-		// 	continue;
-		// }
 
 		// Check server sockets for new connections
 		for (std::vector<ServerSocket *>::iterator it = _serverSockets.begin(); it != _serverSockets.end(); ++it)
 		{
 			if (FD_ISSET((*it)->getFD(), &readFDs))
-			{
 				handleNewConnection((*it)->getFD());
-			}
 		}
 
 		// Check client sockets for requests or responses
@@ -132,19 +131,19 @@ void ServerManager::run()
 				}
 			}
 
-
-				// std::cout << "i'm going through here" << std::endl;
-				if (clientSocket->hasCommunicationTimeout())
-				{
-					std::cout << RED << "Client " << clientFD << " has timed out" << DEFAULT << std::endl;
-					std::map<int, ClientSocket *>::iterator next = it;
-					++next;
-					close(clientFD);
-					_clientSockets.erase(it);
-					delete clientSocket;
-					it = next;
-					continue;
-				}
+			if (clientSocket->hasCommunicationTimeout())
+			{
+				if (clientSocket->hasResponseToSend())
+					clientSocket->sendResponse();
+				std::cout << RED << "Client " << clientFD << " has timed out" << DEFAULT << std::endl;
+				std::map<int, ClientSocket *>::iterator next = it;
+				++next;
+				close(clientFD);
+				_clientSockets.erase(it);
+				delete clientSocket;
+				it = next;
+				continue;
+			}
 			if (clientSocket->getDisconnection())
 			{
 
@@ -181,12 +180,6 @@ void ServerManager::handleNewConnection(int serverFD)
 
 void ServerManager::handleRequest(int clientFD, ClientSocket &client)
 {
-	std::cout << std::endl
-			  << std::endl
-			  << std::endl
-			  << "----------- NEW REQUEST -----------" << std::endl;
-	static int i = 0;
-	std::cout << "i now: " << i++ << std::endl;
 	char buffer[4096] = {0};
 
 	int bytesReceived = recv(clientFD, buffer, sizeof(buffer), 0);
@@ -198,35 +191,17 @@ void ServerManager::handleRequest(int clientFD, ClientSocket &client)
 	}
 	std::string requestStr(buffer, bytesReceived);
 
-	std::cout << "########################### REQUEST GOT:" << std::endl;
-	std::cout << requestStr << std::endl;
 	if (!client.getRequestParsed())
-	{
-		// std::cout << "got in parse http headers" << std::endl;
 		client.parseHttpHeaders(requestStr);
-	}
 
 	if (!client.getRequestIsReady())
-	{
-
-		// std::cout << "got in parse request body" << std::endl;
 		client.parseHttpBody(requestStr);
-	}
 
-	// std::cout << "REACHED HERE" << std::endl;
 	HttpRequest req = client.getRequest();
-	// std::map<std::string, std::string>::iterator it = req.headers.begin();
-	// std::cout << "Client Headers: " << std::endl;
-	// for (; it != req.headers.end(); it++)
-	// {
-	// 	std::cout << it->first << ": " << it->second << std::endl;
-	// }
 	if (client.getRequestIsReady())
 	{
-		// std::cout << "HTTP Request: Client ID: " << client.getFD() << " Method: " << client.
-
 		HttpResponse res = processReq(client.getRequest(), client);
-		// std::cout << "Response:" << std::endl << res.body << std::endl;
+		std::cout << res.body << std::endl;
 		client.setResponse(res);
 		client.reset();
 	}
@@ -235,9 +210,6 @@ void ServerManager::handleRequest(int clientFD, ClientSocket &client)
 HttpResponse ServerManager::processReq(HttpRequest req, ClientSocket &client)
 {
 	ServerConfig server = getCorrectServer(req, client); // gets the correct server for each request
-
-	// std::cout << std::endl << "Server Got: " << std::endl;
-	// std::cout << "REQ URI: " << server.getMaxBodySize() << std::endl;
 	std::cout << BLUE << "HTTP Request: " << req.method << " " << req.uri << " | From client [" << client.getFD() << "] | To: " << server.getServerName() << DEFAULT << std::endl;
 
 	// if there's cgi to execute, do that
@@ -251,8 +223,6 @@ HttpResponse ServerManager::processReq(HttpRequest req, ClientSocket &client)
 HttpResponse ServerManager::executeReq(ServerConfig server, HttpRequest req)
 {
 	Location location = getCorrectLocation(server, req.uri);
-	std::cout << "location got: " << location << std::endl;
-	// std::cout << "redirectopU				RL " << redirectionUrl << server.getRoot() << std::endl;
 
 	if (req.version != "HTTP/1.1")
 		return createHttpResponse(505, server.getErrorPage(505));
@@ -272,15 +242,11 @@ HttpResponse ServerManager::executeReq(ServerConfig server, HttpRequest req)
 	{
 		if (req.method == "GET" && (location.getAutoIndex() == true || isON == true))
 		{
-			isON = true;
-			std::cout << "trueeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee autoindex " << location.getAutoIndex()<<  std::endl;	
+			isON = true;	
 			return handleGetRequestAuto(server, location, req);
 		}
 		else if (req.method == "GET")
-		{
-			std::cout << "falseeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee autoindex " <<location.getAutoIndex() <<  std::endl;	
 			return handleGetRequest(server, location, req);
-		}
 		else if (req.method == "POST")
 			return handlePostRequest(server, req, location);
 		else if (req.method == "DELETE")
@@ -298,84 +264,57 @@ HttpResponse ServerManager::handleGetRequest(ServerConfig server, Location locat
 {
     // Construct the full filepath based on server configuration and request
 	std::string serverRoot = server.getRoot().substr(0, server.getRoot().length() - 1);
-	std::cout << "server root: " << serverRoot << std::endl;
 	std::string filepath = fullPath("public/", server.getRoot() + location.getIndexFile());
-	std::cout << "filepath in get request: " << filepath << std::endl;
 
 	if (endsWith(req.uri, ".html"))
 		filepath = fullPath("public/", serverRoot + req.uri);
-	// if (req.uri(".html"))
     // Check for redirection based on location configuration
     if (!location.getRedirection().empty())
         return createHttpResponse(301, location.getRedirection());
-
-    // Extract parent directory path from server root
-    // std::string pages = server.getRoot().substr(0, server.getRoot().find_last_of("/"));
 
     struct stat fileInfo;
 
     // Check if the file or directory at filepath exists and retrieve its information
     if (stat(filepath.c_str(), &fileInfo) != 0 || filepath.find(req.uri) == std::string::npos)
-    {
-        // If filepath does not exist, log and return 404 Not Found response
-		std::cout << "Filepath does not exist: " << filepath << std::endl;
 		return createHttpResponse(404, server.getErrorPage(404));
-    }
 
     // If the filepath exists, check its type using stat
     if (S_ISREG(fileInfo.st_mode))
-    {
-        // If it's a regular file, log and return 200 OK response
-        std::cout << "Requested URI is a regular file: " << req.uri << std::endl;
         return createHttpResponse(200, filepath);
-    }
 
     return createHttpResponse(500, server.getErrorPage(500));
 }
 
 HttpResponse ServerManager::handleGetRequestAuto(ServerConfig server, Location location, HttpRequest req)
 {
-	std::cout << "HEEEEEEEEEEEEEEEEEEEEEEEEEEEREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEe" << std::endl;
 	std::string serverRoot = server.getRoot().substr(0, server.getRoot().length() - 1);
-	std::cout << "server root: " << serverRoot << std::endl;
     std::string filepath = fullPath("public/", serverRoot + req.uri);
-    // std::string filepath = fullPath("public/", server.getRoot() + location.getIndexFile());
-    // Check for redirection
 
+    // Check for redirection
     if (!location.getRedirection().empty())
         return createHttpResponse(301, location.getRedirection());
 
-    std::string pages = server.getRoot().substr(0, server.getRoot().find_last_of("/"));
-
     // Check if the requested URI corresponds to a directory
     if (isDirectory(filepath))
-    {
-        std::cout << "Requested URI is a directory: " << req.uri << std::endl;
         return createAutoindex(server, req.uri, location.getRoute());
-    }
 
     struct stat fileInfo;
     // Check if the filepath exists and is a regular file
     if (stat(filepath.c_str(), &fileInfo) != 0)
     {
-		if (stat(fullPath("public/" + serverRoot, location.getIndexFile()).c_str(), &fileInfo) != 0) {
-
-        	std::cout << "Filepath does not exist: " << filepath << std::endl;
+		if (stat(fullPath("public/" + serverRoot, location.getIndexFile()).c_str(), &fileInfo) != 0 || location.getRoute() == "/")
         	return createHttpResponse(404, server.getErrorPage(404));
-		}
 		return createHttpResponse(200, fullPath("public/" + serverRoot, location.getIndexFile()));
     }
 
     // If it's a regular file, return 200 OK
     if (S_ISREG(fileInfo.st_mode))
-    {
-        std::cout << "Requested URI is a regular file: " << req.uri << std::endl;
         return createHttpResponse(200, filepath);
-    }
 
     // Default to 403 Forbidden if neither a directory nor a regular file
     return createHttpResponse(403, server.getErrorPage(403));
 }
+
 HttpResponse ServerManager::handlePostRequest(ServerConfig server, HttpRequest req, Location location)
 {
 
@@ -388,9 +327,7 @@ HttpResponse ServerManager::handlePostRequest(ServerConfig server, HttpRequest r
 	std::string boundry = getBoundary(req);
 
 	if (req.body.find(boundry) == std::string::npos || req.body.find("filename=\"") == std::string::npos)
-	{
 		throw std::runtime_error("couldn't find boundry or filename");
-	}
 
 	// Get file name
 	std::string filename;
@@ -451,45 +388,6 @@ Location ServerManager::getCorrectLocation(ServerConfig server, std::string uri)
 	return getCorrectLocation(server, uri);
 }
 
-// Location ServerManager::getCorrectLocation(ServerConfig server, std::string uri)
-// {
-// 	std::map<std::string, Location> locations = server.getLocations();
-// 	std::map<std::string, Location>::iterator locationIT = locations.begin();
-
-
-// 	for (; locationIT != locations.end(); locationIT++)
-// 	{
-// 		std::cout << locationIT->second << std::endl;
-// 		if (locationIT->first == uri)
-// 			return locationIT->second;
-// 		std::string redir = locationIT->second.getRedirection();
-// 		if (!redir.empty())
-// 			if (redir.find_first_of("/") != std::string::npos)
-// 				redir = redir.substr(redir.find_first_of("/") + 1);
-			
-// 		size_t pos = uri.find_first_of("/") + 1;
-		
-// 		if (pos != std::string::npos && redir.find(uri.substr(uri.find_first_of("/") + 1)) != std::string::npos) {
-// 			std::cout << "############### REDIR ##############" << std::endl << "REDIR: " <<  redir << " | URI: " << uri << std::endl << std::endl << std::endl << std::endl;
-// 			return locationIT->second;
-
-// 		}
-// 	}
-
-// 	Location newLocation;
-
-// 	newLocation.initLocationVals();
-// 	newLocation.setMethod("GET");
-// 	if (endsWith(uri, ".html") || endsWith(uri, ".cpp") || endsWith(uri, ".png") || endsWith(uri, ".gif"))
-// 	{
-// 		newLocation.setIndexFile(uri.substr(uri.find_last_of("/")));
-// 		std::cout << "new location index file: " << newLocation.getIndexFile() << std::endl;
-// 		return newLocation;
-// 	}
-// 	newLocation.setIndexFile("error_pages/404.html");
-// 	return newLocation;
-// }
-
 ServerConfig ServerManager::getCorrectServer(HttpRequest req, ClientSocket &client)
 {
 	(void)client;
@@ -510,7 +408,6 @@ ServerConfig ServerManager::getCorrectServer(HttpRequest req, ClientSocket &clie
 
 	for (size_t i = 0; i < servers.size(); i++)
 	{
-		// std::cout << "Server host: " << servers[i].getHost() << " Host from req: " << host << std::endl;
 
 		if (servers[i].getServerName() == host)
 			return servers[i];
@@ -540,7 +437,6 @@ bool ServerManager::is_valid(Config *config)
 	{
 
 		std::set<int> ports = serverIT->getPorts();
-		// std::set<int>::iterator portIT = ports.begin();
 
 		std::map<std::string, Location> locations = serverIT->getLocations();
 		std::map<std::string, Location>::iterator locationIT = locations.begin();
@@ -581,7 +477,6 @@ bool ServerManager::is_valid(Config *config)
 		{
 			if (locationIT->second.getIndexFile().empty())
 				locationIT->second.setIndexFile(serverIT->getIndex());
-			// std::cout << "LOCATION IT: " << locationIT->second << std::endl;
 		}
 
 		serverIT->setLocations(locations);
@@ -610,27 +505,6 @@ bool ServerManager::is_valid(Config *config)
 			std::cout << "Server #" << serverIT->getServerNum() << " - No locations configured for the server. " << std::endl;
 			return 0;
 		}
-		bool isDuplicate = false;
-		std::set<int>::iterator portIT = ports.begin();
-		for (; portIT != ports.end(); ++portIT)
-		{
-			std::pair<std::string, int> hostPortPair = std::make_pair(serverIT->getHost(), *portIT);
-			if (hostPortPairs.find(hostPortPair) != hostPortPairs.end())
-			{
-				isDuplicate = true;
-				break;
-			}
-		}
-		if (isDuplicate)
-		{
-			std::cout << "Skipping server #" << serverIT->getServerNum() << " due to duplicate host and port combination." << std::endl;
-			continue;
-		}
-
-		for (portIT = ports.begin(); portIT != ports.end(); ++portIT)
-		{
-			hostPortPairs.insert(std::make_pair(serverIT->getHost(), *portIT));
-		}
 	}
 
 	config->setServers(servers);
@@ -647,8 +521,6 @@ bool ServerManager::isDirectory(const std::string &path)
 {
 	struct stat statbuf;
 	if (stat(path.c_str(), &statbuf) != 0)
-	{
 		return false;
-	}
 	return S_ISDIR(statbuf.st_mode);
 }

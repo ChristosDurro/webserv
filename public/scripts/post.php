@@ -1,28 +1,3 @@
-<!-- <?php
-
-// echo "<!DOCTYPE html>";
-// echo "<html lang=\"en\">\"";
-// echo "<head>";
-// echo "	<meta charset=\"UTF-8\">";
-// echo "	<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">";
-// echo "	<title>Document</title>";
-// echo "</head>";
-// echo "<body>";
-
-// if ($_SERVER["REQUEST_METHOD"] == "POST") {
-//     // Retrieve the submitted content
-//     $content = htmlspecialchars($_POST["content"]);
-//     echo "<h1>Submitted Content</h1>";
-//     echo "<p>" . $content . "</p>";
-// } else {
-//     echo "<h1>No content submitted</h1>";
-// }
-
-// echo "</body>";
-// echo "</html>";
-
-?> -->
-
 <?php
 $method = $_SERVER['REQUEST_METHOD'] ?? 'CLI';
 $name = $_GET['name'] ?? 'Guest';
@@ -30,7 +5,6 @@ $data = file_get_contents('php://stdin');
 
 parse_str($data, $parsedData);
 
-// header('Content-Type: text/html; charset=utf-8');
 echo "<html>
 <style>
 .navbar {

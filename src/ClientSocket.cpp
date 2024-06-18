@@ -6,7 +6,7 @@
 /*   By: cdurro <cdurro@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 14:12:20 by cdurro            #+#    #+#             */
-/*   Updated: 2024/06/15 10:21:24 by cdurro           ###   ########.fr       */
+/*   Updated: 2024/06/18 11:41:44 by cdurro           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,12 +21,9 @@ ClientSocket::ClientSocket(int clientFD)
 	_bytesReceived = 0;
 	_contentLength = 0;
 	_timeStarted = time(0);
-	// _requestStr = "";
-	// _body = "";
 	_requestIsReady = true;
 	_requestParsed = false;
 	_chunk = false;
-	// _chunkBuffer = "";
 }
 
 ClientSocket::~ClientSocket()
@@ -53,6 +50,7 @@ void ClientSocket::setResponse(HttpResponse res)
 	_isComplete = true;
 	_requestParsed = false;
 	_responseQueue.push(toString(_response));
+	std::cout << " got in set response" << std::endl;
 }
 
 bool ClientSocket::hasCommunicationTimeout()
@@ -104,9 +102,7 @@ int ClientSocket::getFD() const
 
 void ClientSocket::parseHttpHeaders(std::string &buffer)
 {
-	// std::cout << "request now: " << buffer << std::endl;
 	_requestStr.append(buffer);
-	// std::cout << _requestStr << std::endl;
 	if (_requestStr.find("\r\n\r\n") == std::string::npos)
 		return;
 	_request = parseHttpRequest(_requestStr);

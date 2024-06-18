@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   Http.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ttaneski <ttaneski@student.42.fr>          +#+  +:+       +#+        */
+/*   By: cdurro <cdurro@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/30 11:08:40 by cdurro            #+#    #+#             */
-/*   Updated: 2024/06/14 16:17:33 by ttaneski         ###   ########.fr       */
+/*   Updated: 2024/06/18 11:42:27 by cdurro           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,12 +22,10 @@ HttpRequest parseHttpRequest(std::string &content)
 	{
 		parseRequestHeader(req.headers, content);
 	}
-	// std::cout << "i reach this" << std::endl;
 
 	// Remove the blank line after the headers
 	content.erase(content.begin(), content.begin() + 2);
 
-	// GET & DELETE usually contains no relavant body
 	return req;
 }
 
@@ -56,10 +54,7 @@ void parseRequestHeader(std::map<std::string, std::string> &header, std::string 
 	{
 		throw std::runtime_error("couldn't find ':'");
 	}
-	// std::cout << "colonPos: " << colonPos << std::endl;
-	// std::cout << content << std::endl;
 	std::string key = content.substr(0, colonPos);
-	// std::cout << key << std::endl;
 	content.erase(content.begin(), content.begin() + colonPos + 1);
 
 	// Handle leading white spaces before value
@@ -97,9 +92,6 @@ HttpResponse createHttpResponse(int code, const std::string &path)
 	if (code == 301)
 	{
 		std::cout << "path: " << path << std::endl;
-		// res.body = path;
-		// res.headers["Content-Length"] = toString(res.body.size());
-		// res.headers["Content-Type"] = "text/html";
 		res.headers["Location"] = path;
 		return res;
 	}
@@ -143,6 +135,8 @@ HttpResponse createAutoindex(ServerConfig server, const std::string &path, const
 
     std::cout << "Autoindex is enabled. Generating directory listing..." << std::endl;
     std::string directoryListing = generateDirectoryListing("public/" + server.getRoot() + path, path);
+	if (directoryListing.empty())
+		return createHttpResponse(403, server.getErrorPage(403));
     std::stringstream response_stream;
     response_stream << "HTTP/1.1 200 OK\r\n"
                     << "Content-Type: text/html\r\n"

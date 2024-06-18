@@ -6,7 +6,7 @@
 /*   By: cdurro <cdurro@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/29 10:29:50 by cdurro            #+#    #+#             */
-/*   Updated: 2024/06/15 12:19:10 by cdurro           ###   ########.fr       */
+/*   Updated: 2024/06/18 11:41:19 by cdurro           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@ HttpResponse processCgiReq(HttpRequest req, ClientSocket &client, ServerConfig &
 	try
 	{
 		std::map<std::string, std::string> envs = getCgiEnv(req, client, server);
+		std::string cgiRes = "";
 
 		// Check file exists and is executable
 		std::ifstream file(envs["PATH_TRANSLATED"].c_str());
@@ -25,8 +26,12 @@ HttpResponse processCgiReq(HttpRequest req, ClientSocket &client, ServerConfig &
 		{
 			return createHttpResponse(404, server.getErrorPage(404));
 		}
-
-		return createHttpResponse(executeCgi(envs, req.body, server));
+		cgiRes = executeCgi(envs, req.body, server);
+		if (cgiRes == "408") {
+			std::cout << "got in 408" << std::endl;
+			return createHttpResponse(408, server.getErrorPage(408));
+		}
+		return createHttpResponse(cgiRes);
 	}
 	catch (const std::exception &e)
 	{
@@ -48,7 +53,6 @@ std::map<std::string, std::string> getCgiEnv(HttpRequest req, ClientSocket &clie
 	cgiEnvs["PATH_INFO"] = req.uri;
 	cgiEnvs["PATH_TRANSLATED"] = fullPath("public/scripts/", getScriptName(req.uri));
 	cgiEnvs["QUERY_STRING"] = getQueryString(req.uri);
-	// cgiEnvs["REMOTE_ADDR"] = toIpString(client.get);
 	cgiEnvs["REQUEST_METHOD"] = req.method;
 	cgiEnvs["SCRIPT_NAME"] = getScriptName(req.uri);
 	cgiEnvs["SERVER_NAME"] = server.getServerName();
@@ -143,12 +147,11 @@ std::string executeCgi(std::map<std::string, std::string> envs, std::string body
 				close(pipeOut[0]);
 				std::cout << RED << time(0) - cgiStartTime << " seconds passed. CGI timeout reached!" << DEFAULT << std::endl;
 				HttpResponse res = createHttpResponse(408, server.getErrorPage(408));
-				return res.body;
+				return toString(res.statusCode);
 			}
 		}
 		close(pipeOut[0]);
 
-		// std::cout << result << std::endl;
 		waitpid(pid, &status, 0);
 		if (!(WIFEXITED(status) && WEXITSTATUS(status) == 0))
 		{

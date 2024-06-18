@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   utils.cpp                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ttaneski <ttaneski@student.42.fr>          +#+  +:+       +#+        */
+/*   By: cdurro <cdurro@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/07 11:46:53 by cdurro            #+#    #+#             */
-/*   Updated: 2024/06/14 12:43:30 by ttaneski         ###   ########.fr       */
+/*   Updated: 2024/06/18 11:43:23 by cdurro           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -74,13 +74,9 @@ void trimSpaces(std::string &str)
 
 std::string extractPath(std::string &str, size_t startPos, size_t len)
 {
-	// std::cout << "str: " << str << "| Start pos: " << startPos << "| Len: " << len << std::endl;
 	str.erase(startPos, len);
-	// std::cout << "Erase: " << str << std::endl;
 	str.resize(str.size() - 1);
-	// std::cout << "Resize: " << str << std::endl;
 	trimSpaces(str);
-	// std::cout << "Trimmed: " << str << std::endl;
 	return str;
 }
 
@@ -103,7 +99,6 @@ int countWords(std::string str)
 	int i = 0;
 	while (str[i])
 	{
-		// std::cout << "str[i]: " << str[i] << std::endl;
 		if ((((str[i] >= 'a' && str[i] <= 'z') || (str[i] >= 'A' && str[i] <= 'Z')) && i != 0 && str[i - 1] == ' '))
 			count++;
 		i++;
@@ -284,6 +279,7 @@ std::string generateDirectoryListing(const std::string &path, const std::string 
         closedir(dir);
     } else {
         perror("opendir");
+		return "";
     }
     ss << "</ul></body></html>";
     return ss.str();

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ServerConfig.cpp                                   :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ttaneski <ttaneski@student.42.fr>          +#+  +:+       +#+        */
+/*   By: cdurro <cdurro@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/26 14:20:39 by cdurro            #+#    #+#             */
-/*   Updated: 2024/06/13 16:23:29 by ttaneski         ###   ########.fr       */
+/*   Updated: 2024/06/18 11:42:55 by cdurro           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,6 @@
 
 ServerConfig::ServerConfig() : _port(0), _serverName(""), _host(""), _root(""), _index("")
 {
-	// std::cout << "Server Config Constructor called" << std::endl;
 }
 
 ServerConfig::ServerConfig(std::stringstream &serverStream, int index, std::map<std::string, Location> locations) : _port(0), _serverNum(index), _max_body_size(-1), _serverName(""), _host(""), _locations(locations)
@@ -36,7 +35,6 @@ ServerConfig::ServerConfig(std::stringstream &serverStream, int index, std::map<
 
 ServerConfig::~ServerConfig()
 {
-	// std::cout << "Server Config Destructor called" << std::endl;
 }
 
 void ServerConfig::setErrorPages(std::map<int, std::string> errorPages)
@@ -148,8 +146,6 @@ void ServerConfig::parseServerConfigData(std::stringstream &ss)
 					_host = hostStr;
 					_ip = convertIP(_host);
 				}
-				// std::cout << "HOST STR: " << hostStr << std::endl;
-				// std::cout << "PORT STR: " << portStr << std::endl;
 			}
 			else
 			{
@@ -157,9 +153,6 @@ void ServerConfig::parseServerConfigData(std::stringstream &ss)
 				_port = extractInt(line, firstWordLen(line));
 				_ports.insert(_port);
 			}
-
-			// i get the port number and put it into the ports set
-			// if ()
 		}
 		// extract server_name value from config file
 		else if (line.find("server_name") != std::string::npos)
@@ -184,7 +177,6 @@ void ServerConfig::parseServerConfigData(std::stringstream &ss)
 		else
 			throw std::runtime_error("Unknown keyword for server config!");
 	}
-	// std::cout << "REACHED HERE PL?" << std::endl;
 	// basically from before where i added each extra listen port to the stream, i now extract them and put them in the set
 	if (!portStream.str().empty())
 		parsePorts(portStream);
@@ -192,8 +184,6 @@ void ServerConfig::parseServerConfigData(std::stringstream &ss)
 
 void ServerConfig::parsePorts(std::stringstream &ss)
 {
-	// std::cout << "------- PORT STREAM -------" << std::endl;
-	// std::cout << ss.str() << std::endl;
 
 	std::string line;
 

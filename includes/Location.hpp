@@ -6,7 +6,7 @@
 /*   By: cdurro <cdurro@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/02/26 13:45:09 by cdurro            #+#    #+#             */
-/*   Updated: 2024/06/11 11:06:22 by cdurro           ###   ########.fr       */
+/*   Updated: 2024/06/18 11:40:27 by cdurro           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -31,7 +31,6 @@ public:
 	Location(std::stringstream &ss, std::string path);
 	~Location();
 
-	// std::string &operator[](int index);
 
 	void initLocationVals();
 
@@ -44,7 +43,6 @@ public:
 	std::string getUploads() const;
 	std::string getIndexFile() const;
 	std::string getRedirection() const;
-	// void getMethods() const;
 	bool getAutoIndex() const;
 };
 

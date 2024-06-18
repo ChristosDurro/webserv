@@ -6,7 +6,7 @@
 /*   By: cdurro <cdurro@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/07 13:51:50 by cdurro            #+#    #+#             */
-/*   Updated: 2024/06/11 13:46:44 by cdurro           ###   ########.fr       */
+/*   Updated: 2024/06/18 11:42:32 by cdurro           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,7 +14,6 @@
 
 Location::Location()
 {
-	// std::cout << "Default location constructor" << std::endl;
 }
 
 Location::Location(std::stringstream &ss, std::string path)

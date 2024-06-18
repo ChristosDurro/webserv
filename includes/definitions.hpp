@@ -6,7 +6,7 @@
 /*   By: cdurro <cdurro@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/30 10:23:53 by cdurro            #+#    #+#             */
-/*   Updated: 2024/06/15 11:49:15 by cdurro           ###   ########.fr       */
+/*   Updated: 2024/06/18 09:45:44 by cdurro           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,6 +22,7 @@
 #define BLUE "\033[34m"
 #define CLIENT_TIMEOUT 5
 #define CGI_TIMEOUT 5
+#define DEFAULT_CONFIG "config/default.conf"
 
 class ServerConfig;
 struct HttpRequest

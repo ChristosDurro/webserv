@@ -6,7 +6,7 @@
 /*   By: cdurro <cdurro@42.fr>                      +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/05/20 12:15:37 by cdurro            #+#    #+#             */
-/*   Updated: 2024/06/15 10:25:29 by cdurro           ###   ########.fr       */
+/*   Updated: 2024/06/18 11:40:14 by cdurro           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,9 +36,7 @@ private:
 	std::string _requestStr;
 	std::string _body;
 	std::string _chunkBuffer;
-	// int _serverConnectFD;
 	std::queue<std::string> _responseQueue;
-	// struct sockaddr_in _clientAddr;
 	ServerConfig _config;
 	HttpRequest _request;
 	HttpResponse _response;
@@ -48,7 +46,6 @@ public:
 	~ClientSocket();
 
 	int getContentLength() const;
-	// int getBodyReceived() const;
 	int getFD() const;
 	int getBytesReceived() const;
 
@@ -61,7 +58,6 @@ public:
 	void appendToRequest(const std::string &data);
 	void setComplete(bool complete);
 	void setContentLength(int length);
-	// void setBodyReceived(int received);
 	void parseHttpHeaders(std::string &buffer);
 	void parseHttpBody(std::string &buffer);
 	void setBytesReceived(int received);
@@ -78,8 +74,6 @@ public:
 
 	HttpRequest getRequest() const;
 	HttpResponse getResponse() const;
-
-	// struct pollfd getPollFD() const;
 };
 
 #endif
